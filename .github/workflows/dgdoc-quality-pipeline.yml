@@ -203,7 +203,7 @@ jobs:
           echo "Using Sonar Organization: $ORG_KEY"
           echo "Using Sonar Project Key: $PROJ_KEY"
 
-          ./mvnw --batch-mode --no-transfer-progress compile \
+          ./mvnw --batch-mode --no-transfer-progress test-compile \
             org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             "-Dsonar.host.url=$HOST_URL" \
             "-Dsonar.token=$SONAR_TOKEN" \
@@ -211,7 +211,8 @@ jobs:
             "-Dsonar.projectKey=$PROJ_KEY" \
             "-Dsonar.projectName=Sports Center Management" \
             "-Dsonar.sources=src/main/java" \
-            "-Dsonar.java.binaries=target/classes"
+            "-Dsonar.java.binaries=target/classes" \
+            "-Dsonar.java.test.binaries=target/test-classes"
 
   # 6. Bảng tổng hợp chất lượng DGDoC (Quality Gate Summary Dashboard)
   quality-dashboard:
