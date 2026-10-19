@@ -50,8 +50,8 @@ public class UserMembership {
     @Column(name="purchase_source") private String purchaseSource;
     @Column(name="checkout_invoice_id") private Integer checkoutInvoiceId;
 
-    public String purchasedName() { return packageNameSnapshot!=null?packageNameSnapshot:aPackage.getPackageName(); }
-    public String purchasedType() { return packageTypeSnapshot!=null?packageTypeSnapshot:aPackage.getPackageType(); }
-    public Integer purchasedDuration() { return durationDaysSnapshot!=null?durationDaysSnapshot:aPackage.getDurationDays(); }
-    public java.math.BigDecimal purchasedPrice() { return priceSnapshot!=null?priceSnapshot:aPackage.getPrice(); }
+    public String purchasedName() { return packageNameSnapshot!=null?packageNameSnapshot:(aPackage!=null?aPackage.getPackageName():null); }
+    public String purchasedType() { return packageTypeSnapshot!=null?packageTypeSnapshot:(aPackage!=null?aPackage.getPackageType():null); }
+    public Integer purchasedDuration() { return durationDaysSnapshot!=null?durationDaysSnapshot:(aPackage!=null?aPackage.getDurationDays():null); }
+    public java.math.BigDecimal purchasedPrice() { return priceSnapshot!=null?priceSnapshot:(aPackage!=null?aPackage.getPrice():null); }
 }

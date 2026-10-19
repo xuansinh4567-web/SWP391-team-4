@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@SuppressWarnings("java:S2077")
 public class ReceptionistMemberServiceImpl implements ReceptionistMemberService {
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
