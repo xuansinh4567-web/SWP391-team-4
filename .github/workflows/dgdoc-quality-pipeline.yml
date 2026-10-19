@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # 1. Quét Dockerfile với Hadolint (Tương tự DGDoC Hadolint)
+  # 1. Quét Dockerfile với Hadolint (DGDoC Dockerfile Standard)
   dockerfile-lint:
     name: Dockerfile Lint (Hadolint)
     runs-on: ubuntu-latest
@@ -36,9 +36,9 @@ jobs:
           ignore: "DL3008,DL3015"
         continue-on-error: true
 
-  # 2. Quét Frontend với React ESLint (Tương tự DGDoC React ESLint)
-  frontend-lint:
-    name: Frontend Lint (React ESLint)
+  # 2. Quét & Kiểm thử chất lượng Frontend (DGDoC React Standard)
+  frontend-quality:
+    name: Frontend Quality (Lint & Tests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -57,15 +57,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint (DGDoC Standard)
-        run: npm run lint || true
+      - name: Run Linter (DGDoC Standard)
+        run: npm run lint
+
+      - name: Run Frontend Unit Tests
+        run: npm test
 
       - name: Frontend Dependency Security Audit
         run: npm audit --audit-level=high || true
 
-  # 3. Quét Backend Java với Checkstyle (Tương tự DGDoC Java Checkstyle)
-  backend-java-lint:
-    name: Backend Lint (Java Checkstyle)
+  # 3. Quét Backend Java với Checkstyle (DGDoC Java Standard)
+  backend-quality:
+    name: Backend Quality (Java Checkstyle)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -89,19 +92,28 @@ jobs:
         run: |
           ./mvnw --batch-mode --no-transfer-progress \
             org.apache.maven.plugins:maven-checkstyle-plugin:3.3.1:checkstyle \
-            -Dcheckstyle.config.location=google_checks.xml \
-            -Dcheckstyle.failsOnError=false \
-            -Dcheckstyle.consoleOutput=false
+            "-Dcheckstyle.config.location=google_checks.xml" \
+            "-Dcheckstyle.failsOnError=false" \
+            "-Dcheckstyle.consoleOutput=false"
+
+      - name: Summarize Checkstyle Errors
+        if: always()
+        run: |
+          if [ -f target/checkstyle-result.xml ]; then
+            VIOLATIONS=$(grep -c "<error " target/checkstyle-result.xml || echo "0")
+            echo "📊 Java Checkstyle phát hiện: **$VIOLATIONS** vi phạm định dạng code (Google Checks)." >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload Java Checkstyle Quality Report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: dgdoc-java-checkstyle-report
           path: Backend/target/checkstyle-result.xml
           if-no-files-found: ignore
           retention-days: 7
 
-  # 4. Quét bảo mật & rà soát mã nguồn (Security SAST Scanner)
+  # 4. Quét bảo mật & rà soát mã nguồn / lộ lọt bí mật (Security SAST Scanner)
   security-sast-scan:
     name: Security & Vulnerability Scan (SAST)
     runs-on: ubuntu-latest
@@ -115,7 +127,108 @@ jobs:
         with:
           scan-type: 'fs'
           scan-ref: '.'
+          scanners: 'vuln,secret'
           severity: 'CRITICAL,HIGH'
           format: 'table'
+          output: 'trivy-report.txt'
           exit-code: '0'
           trivyargs: '--offline-scan'
+
+      - name: Display Trivy Scan Results
+        if: always()
+        run: |
+          if [ -f trivy-report.txt ]; then
+            cat trivy-report.txt
+          fi
+
+      - name: Upload Trivy Security Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dgdoc-trivy-security-report
+          path: trivy-report.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # 5. Phân tích mã nguồn với SonarQube / SonarCloud (Trọng tâm DGDoC)
+  sonarqube-analysis:
+    name: SonarQube / SonarCloud Code Analysis
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+          cache-dependency-path: Backend/pom.xml
+
+      - name: Grant execute permission for Maven Wrapper
+        run: chmod +x mvnw
+
+      - name: Check Sonar Configuration
+        id: sonar-check
+        run: |
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+            echo "SonarQube scan is enabled."
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::warning title=SonarQube Not Configured::SONAR_TOKEN secret chưa được cài đặt trong GitHub Repository Secrets. Bỏ qua phân tích SonarQube. Cấu hình SONAR_TOKEN để kích hoạt."
+          fi
+
+      - name: Run SonarQube / SonarCloud Scanner
+        if: steps.sonar-check.outputs.configured == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+        run: |
+          EXTRA_ARGS=""
+          if [ -n "$SONAR_ORGANIZATION" ]; then
+            EXTRA_ARGS="-Dsonar.organization=$SONAR_ORGANIZATION"
+          fi
+
+          HOST_URL="${SONAR_HOST_URL:-https://sonarcloud.io}"
+          PROJECT_KEY="${SONAR_PROJECT_KEY:-sports-center-swp391}"
+
+          ./mvnw --batch-mode --no-transfer-progress compile \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            "-Dsonar.host.url=$HOST_URL" \
+            "-Dsonar.token=$SONAR_TOKEN" \
+            "-Dsonar.projectKey=$PROJECT_KEY" \
+            "-Dsonar.projectName=Sports Center Management" \
+            "-Dsonar.sources=src/main/java" \
+            "-Dsonar.java.binaries=target/classes" \
+            $EXTRA_ARGS
+
+  # 6. Bảng tổng hợp chất lượng DGDoC (Quality Gate Summary Dashboard)
+  quality-dashboard:
+    name: DGDoC Quality Gate Summary
+    runs-on: ubuntu-latest
+    needs: [dockerfile-lint, frontend-quality, backend-quality, security-sast-scan, sonarqube-analysis]
+    if: always()
+    steps:
+      - name: Generate Quality Dashboard
+        run: |
+          echo "## 🛡️ DGDoC Quality Pipeline Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check / Scanner | Kết quả | Ghi chú |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🐳 Dockerfile Lint (Hadolint) | ${{ needs.dockerfile-lint.result == 'success' && '✅ PASS' || '⚠️ WARN/SKIP' }} | Hadolint Backend & Frontend Dockerfiles |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚛️ Frontend Lint & Tests | ${{ needs.frontend-quality.result == 'success' && '✅ PASS' || '❌ FAIL' }} | Oxlint + 52 Unit Tests + Audit |" >> $GITHUB_STEP_SUMMARY
+          echo "| ☕ Backend Java Checkstyle | ${{ needs.backend-quality.result == 'success' && '✅ PASS' || '❌ FAIL' }} | Google Java Checks Report |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 Security SAST (Trivy) | ${{ needs.security-sast-scan.result == 'success' && '✅ PASS' || '⚠️ WARN' }} | Vulnerabilities & Secret Scan |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📊 SonarQube Analysis | ${{ needs.sonarqube-analysis.result == 'success' && '✅ PASS' || (needs.sonarqube-analysis.result == 'skipped' && '⏭️ SKIPPED' || '⚠️ PENDING/CONFIG') }} | SonarQube / SonarCloud Quality Gate |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> 💡 *Tất cả báo cáo chi tiết (Checkstyle XML, Trivy Report) được lưu trong mục **Artifacts** của đợt chạy này.*" >> $GITHUB_STEP_SUMMARY
