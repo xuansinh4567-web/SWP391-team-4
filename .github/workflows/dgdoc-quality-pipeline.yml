@@ -194,23 +194,24 @@ jobs:
           SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
           SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
         run: |
-          EXTRA_ARGS=""
-          if [ -n "$SONAR_ORGANIZATION" ]; then
-            EXTRA_ARGS="-Dsonar.organization=$SONAR_ORGANIZATION"
-          fi
-
+          ORG_KEY="${SONAR_ORGANIZATION:-$GITHUB_REPOSITORY_OWNER}"
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          PROJ_KEY="${SONAR_PROJECT_KEY:-${ORG_KEY}_${REPO_NAME}}"
           HOST_URL="${SONAR_HOST_URL:-https://sonarcloud.io}"
-          PROJECT_KEY="${SONAR_PROJECT_KEY:-sports-center-swp391}"
+
+          echo "Using Sonar Host: $HOST_URL"
+          echo "Using Sonar Organization: $ORG_KEY"
+          echo "Using Sonar Project Key: $PROJ_KEY"
 
           ./mvnw --batch-mode --no-transfer-progress compile \
             org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             "-Dsonar.host.url=$HOST_URL" \
             "-Dsonar.token=$SONAR_TOKEN" \
-            "-Dsonar.projectKey=$PROJECT_KEY" \
+            "-Dsonar.organization=$ORG_KEY" \
+            "-Dsonar.projectKey=$PROJ_KEY" \
             "-Dsonar.projectName=Sports Center Management" \
             "-Dsonar.sources=src/main/java" \
-            "-Dsonar.java.binaries=target/classes" \
-            $EXTRA_ARGS
+            "-Dsonar.java.binaries=target/classes"
 
   # 6. Bảng tổng hợp chất lượng DGDoC (Quality Gate Summary Dashboard)
   quality-dashboard:
