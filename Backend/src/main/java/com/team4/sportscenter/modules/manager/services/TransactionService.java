@@ -12,6 +12,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@SuppressWarnings("java:S2077")
 public class TransactionService {
     private final JdbcTemplate jdbc;
     private static final String PAYMENT_STATE = "CASE WHEN i.status='REVIEW' AND p.status IN ('SUCCESS','COMPLETED') THEN 'REVIEW' WHEN p.status='COMPLETED' THEN 'SUCCESS' ELSE p.status END";

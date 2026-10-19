@@ -85,7 +85,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Cho phĂ„â€Ă‚Â©p nguÄ‚Â¡Ă‚Â»Ă¢â‚¬Å“n Front-end (Vite/React thÄ‚â€ Ă‚Â°Ä‚Â¡Ă‚Â»Ă‚Âng chÄ‚Â¡Ă‚ÂºĂ‚Â¡y 5173 hoÄ‚Â¡Ă‚ÂºĂ‚Â·c 3000)
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:3000"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
         configuration.setAllowCredentials(true);

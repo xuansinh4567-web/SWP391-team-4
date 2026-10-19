@@ -14,14 +14,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class UserServiceImpl implements UserService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -68,8 +70,8 @@ public class UserServiceImpl implements UserService {
 
         userRepository.save(user);
 
-        // Generate 6-digit random OTP
-        String otpCode = String.format("%06d", new Random().nextInt(999999));
+        // Generate 6-digit cryptographically secure random OTP
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
         
         // Save to RAM
         otpStorage.put(request.getEmail(), otpCode);
@@ -91,7 +93,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Account is already active!");
         }
 
-        String otpCode = String.format("%06d", new Random().nextInt(999999));
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
         otpStorage.put(email, otpCode);
         emailService.sendOtpEmail(email, otpCode, user.getFullName());
     }
@@ -119,7 +121,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Account not found with this email!"));
 
-        String otpCode = String.format("%06d", new Random().nextInt(999999));
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
         otpStorage.put(email + "_FORGOT", otpCode);
         
         emailService.sendForgotPasswordEmail(email, otpCode, user.getFullName());
@@ -157,7 +159,7 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(newEmail)) {
             throw new RuntimeException("New email is already in use by another account.");
         }
-        String otpCode = String.format("%06d", new java.util.Random().nextInt(999999));
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
         otpStorage.put(currentEmail + "_CHANGE_EMAIL_" + newEmail, otpCode);
         emailService.sendOtpEmail(newEmail, otpCode, "Valued Member");
     }

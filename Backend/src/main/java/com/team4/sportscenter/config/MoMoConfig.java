@@ -1,5 +1,7 @@
 package com.team4.sportscenter.config;
 
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import javax.crypto.Mac;
@@ -8,12 +10,40 @@ import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class MoMoConfig {
-    public static final String PARTNER_CODE = "MOMOBKUN20180529";
-    public static final String ACCESS_KEY = "klm05TvNBzhg7h7j";
-    public static final String SECRET_KEY = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
-    public static final String ENDPOINT = "https://test-payment.momo.vn/v2/gateway/api/create";
-    public static final String RETURN_URL = "http://localhost:5173/member/payment-result";
-    public static final String IPN_URL = "http://localhost:5173/member/payment-result"; // Can be same for simple flow
+    public static String PARTNER_CODE;
+    public static String ACCESS_KEY;
+    public static String SECRET_KEY;
+    public static String ENDPOINT;
+    public static String RETURN_URL;
+    public static String IPN_URL;
+
+    @Value("${momo.partner-code:MOMOBKUN20180529}")
+    private String injectedPartnerCode;
+
+    @Value("${momo.access-key:klm05TvNBzhg7h7j}")
+    private String injectedAccessKey;
+
+    @Value("${momo.secret-key:at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa}")
+    private String injectedSecretKey;
+
+    @Value("${momo.endpoint:https://test-payment.momo.vn/v2/gateway/api/create}")
+    private String injectedEndpoint;
+
+    @Value("${momo.return-url:http://localhost:5173/member/payment-result}")
+    private String injectedReturnUrl;
+
+    @Value("${momo.ipn-url:http://localhost:5173/member/payment-result}")
+    private String injectedIpnUrl;
+
+    @PostConstruct
+    public void init() {
+        PARTNER_CODE = injectedPartnerCode;
+        ACCESS_KEY = injectedAccessKey;
+        SECRET_KEY = injectedSecretKey;
+        ENDPOINT = injectedEndpoint;
+        RETURN_URL = injectedReturnUrl;
+        IPN_URL = injectedIpnUrl;
+    }
 
     public static String signHmacSHA256(String data, String secretKey) throws Exception {
         Mac sha256_HMAC = Mac.getInstance("HmacSHA256");

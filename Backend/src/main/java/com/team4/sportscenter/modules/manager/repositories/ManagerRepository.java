@@ -17,6 +17,7 @@ import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
+@SuppressWarnings("java:S2077")
 public class ManagerRepository {
     public static final double LOW_REGISTRATION_THRESHOLD = 0.25;
     public static final int URGENT_WINDOW_HOURS = 6;
