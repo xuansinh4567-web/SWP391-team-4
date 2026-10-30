@@ -575,7 +575,7 @@ const Settings = () => {
         {/* -----------------------------------------------------------------------
             LEFT SIDEBAR: MACOS APPLE ACCOUNT & SETTINGS NAVIGATION MENU
             ----------------------------------------------------------------------- */}
-        <div className="lg:col-span-4 xl:col-span-3 bg-slate-50/80 dark:bg-slate-950/60 border-b lg:border-b-0 lg:border-r border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 flex flex-col justify-between">
+        <div className="lg:col-span-4 bg-slate-50/80 dark:bg-slate-950/60 border-b lg:border-b-0 lg:border-r border-black/[0.06] dark:border-white/[0.08] p-4 sm:p-5 flex flex-col justify-between">
           <div>
             {/* Top Mini Apple Account Card */}
             <div 
@@ -620,22 +620,22 @@ const Settings = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer active:scale-[0.98] ${
+                    className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all duration-150 cursor-pointer active:scale-[0.98] ${
                       isActive
                         ? 'bg-[#0071E3] text-white shadow-sm font-semibold'
                         : 'text-slate-600 dark:text-slate-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-xs ${
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-xs shrink-0 ${
                         isActive ? 'bg-white/20' : tab.tileColor
                       }`}>
                         <TabIcon className="w-4 h-4" />
                       </div>
-                      <span className="truncate">{tab.label}</span>
+                      <span className="truncate text-left" title={tab.label}>{tab.label}</span>
                     </div>
 
-                    <ChevronRight className={`w-4 h-4 opacity-50 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <ChevronRight className={`w-4 h-4 shrink-0 opacity-50 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                   </button>
                 );
               })}
@@ -655,7 +655,7 @@ const Settings = () => {
         {/* -----------------------------------------------------------------------
             RIGHT DETAIL PANE: MACOS INSET GROUPED CONTENT AREA
             ----------------------------------------------------------------------- */}
-        <div className="lg:col-span-8 xl:col-span-9 p-5 sm:p-8 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl flex flex-col justify-between">
+        <div className="lg:col-span-8 p-5 sm:p-8 bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl flex flex-col justify-between">
           <AnimatePresence mode="wait">
 
             {/* TAB 1: PERSONAL PROFILE */}
